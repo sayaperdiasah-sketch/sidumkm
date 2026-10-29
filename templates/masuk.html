@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block judul %}Masuk — SIDUMKM{% endblock %}
+{% block tubuh %}
+<div class="muk">
+  <section class="muk__kiri">
+    <div>
+      <span class="merek-nama">SIDU<em>MKM</em></span>
+      <span class="merek-sub">Sistem informasi dashboard UMKM</span>
+      <p class="muk__tagline">Tiga pilar usaha, dinilai dengan <b>aturan dari data</b> — bukan menebak-nebak.</p>
+    </div>
+    <div class="muk__daftar" aria-label="Statistik acuan">
+      <div class="baris-acuan"><span>Pencatatan keuangan</span><i>+56,8</i><b>r = 0,568</b></div>
+      <div class="baris-acuan"><span>Rencana bisnis</span><i>+45,0</i><b>r = 0,450</b></div>
+      <div class="baris-acuan"><span>Usaha pemasaran</span><i>+25,5</i><b>r = 0,239</b></div>
+      <div class="baris-acuan"><span>Pemanfaatan internet</span><i>+20,0</i><b>r = 0,191</b></div>
+      <div class="baris-acuan" style="border:0"><span>250 UMKM · 8 indikator · ambang sukses 50</span><i>&nbsp;</i><b>&nbsp;</b></div>
+    </div>
+  </section>
+
+  <section class="muk__kanan">
+    <form class="form-kartu" method="post" autocomplete="on">
+      <span class="kicker">Masuk</span>
+      <h1>Lanjutkan pencatatan Anda</h1>
+      <p class="teks-kecil" style="margin:6px 0 20px">Skor, arus kas, dan rekomendasi tersimpan per akun.</p>
+
+      {% if error %}<div class="pesan pesan--gagal">{{ error }}</div>{% endif %}
+
+      <div class="lapang">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required autofocus placeholder="nama@umkm.id" value="{{ request.form.email or '' }}">
+      </div>
+      <div class="lapang">
+        <label for="password">Sandi</label>
+        <div class="sandi-liat">
+          <input id="password" name="password" type="password" required placeholder="Minimal 6 karakter">
+          <button type="button">Lihat</button>
+        </div>
+      </div>
+      <button class="tombol tombol--utama" type="submit" style="width:100%;justify-content:center">Masuk ke dashboard</button>
+
+      <div class="demo-kotak">
+        Akun contoh sudah berisi 6 bulan arus kas, katalog, dan riwayat skor:<br>
+        <b>demo@umkm.id</b> / <b>demo1234</b>
+      </div>
+      <a class="tautan-balik" href="/daftar">Belum punya akun — isi profil usaha (2 menit)</a>
+    </form>
+  </section>
+</div>
+{% endblock %}

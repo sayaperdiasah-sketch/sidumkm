@@ -1,0 +1,289 @@
+{% extends "muk.html" %}
+{% block judul %}Ringkasan usaha{% endblock %}
+{% block kicker %}Ini kondisi {{ profil.nama_usaha }} hari ini{% endblock %}
+{% block sapa %}ini keadaan <b>{{ profil.nama_usaha }}</b> hari ini.{% endblock %}
+{% block aksi %}
+<a class="tombol tombol--kecil" href="/keuangan">Catat uang</a>
+{% if mode == 'riset' %}<a class="tombol tombol--kecil tombol--hantu" href="/api/skor" target="_blank">Lihat JSON skor</a>{% endif %}
+{% endblock %}
+
+{% macro meter(busur, status, kategori) %}
+{# busur 0-100: pathLength=100 sehingga dashoffset langsung menyatakan sisa skor #}
+<div class="meter-skor {{ 'meter---baik' if busur.nilai >= 50 else 'meter---perlu' }}">
+  <svg viewBox="0 0 260 152" role="img" aria-label="Skor kesehatan usaha {{ busur.nilai }} dari 100, status {{ status }}">
+    <path class="meter__jalur" d="{{ busur.d }}" pathLength="100"></path>
+    <path class="meter__isi" d="{{ busur.d }}" pathLength="100" stroke-dasharray="100"
+          stroke-dashoffset="{{ busur.offset }}" data-isi="{{ busur.nilai }}"></path>
+    <line class="meter__ambang" x1="{{ busur.ambang.x1 }}" y1="{{ busur.ambang.y1 }}"
+          x2="{{ busur.ambang.x2 }}" y2="{{ busur.ambang.y2 }}"></line>
+    <line class="meter__jarum" x1="{{ busur.jarum.x1 }}" y1="{{ busur.jarum.y1 }}"
+          x2="{{ busur.jarum.x2 }}" y2="{{ busur.jarum.y2 }}"></line>
+    <circle class="meter__pusat" cx="{{ busur.cx }}" cy="{{ busur.cy }}" r="4.5"></circle>
+    <text class="meter__angka" x="{{ busur.cx }}" y="{{ busur.cy - 10 }}" text-anchor="middle"
+          data-angka="{{ busur.nilai }}" data-desimal="1">0,0</text>
+    <text class="meter__satuan" x="{{ busur.cx }}" y="{{ busur.cy + 12 }}" text-anchor="middle">DARI 100 · {{ kategori|upper }}</text>
+    <text class="meter__label" x="30" y="140" text-anchor="middle">0</text>
+    <text class="meter__label" x="230" y="140" text-anchor="middle">100</text>
+  </svg>
+</div>
+{% endmacro %}
+
+{% block isi %}
+
+{% if berikutnya %}
+<section class="kartu langkah langkah--{{ berikutnya.prioritas }}" aria-labelledby="satu-langkah">
+  <div>
+    <span class="pilah-inline"><span class="kapsul k-{{ berikutnya.warna }}">kerjakan ini dulu</span>
+      <span class="langkah__waktu">Kisarannya {{ '1 menit' if berikutnya.waktu_menit <= 1 else ('%d menit' % berikutnya.waktu_menit) }}</span></span>
+    <h2 id="satu-langkah" style="font-size:clamp(20px,2.4vw,26px);margin:8px 0 6px">{{ berikutnya.judul }}</h2>
+    <p class="teks-kecil" style="margin:0;max-width:62ch">{{ berikutnya.ajakan }}</p>
+    {% if alasan %}
+    <p class="ultup" style="margin:10px 0 0">{% for a in alasan %}{{ a }}{% if not loop.last %} · {% endif %}{% endfor %}</p>
+    {% endif %}
+  </div>
+  <div style="display:grid;gap:8px;justify-items:stretch">
+    <form method="post" action="/tindak">
+      <input type="hidden" name="kode" value="{{ berikutnya.kode }}">
+      {% if berikutnya.kode == 'catat' %}
+      <input type="hidden" name="jumlah" value="{{ preset.nominal }}">
+      <input type="hidden" name="kategori" value="{{ preset.kategori }}">
+      {% endif %}
+      <button class="tombol tombol--utama langkah__tombol" type="submit">
+        {% if berikutnya.kode == 'catat' %}Catat {{ preset.nominal|rp }} sekarang{% else %}{{ berikutnya.tombol }}{% endif %}
+      </button>
+    </form>
+    <a class="tautan-jalan" href="{{ berikutnya.tautan }}">Lihat halamannya sendiri ›</a>
+    {% if lainnya %}<span class="ulang-saja">↓ {{ lainnya|length }} hal lain ada di bawah</span>{% endif %}
+  </div>
+</section>
+{% endif %}
+
+<section class="grid grid--skor">
+  <div class="kartu">
+    <div class="kartu__kepala">
+      {% if mode == 'riset' %}<div><span class="kicker kartu__note">Skor_Keberhasilan</span><h2>Skor kesehatan usaha</h2></div>
+      <span class="kartu__note">8 indikator · bobot dataset</span>{% else %}
+      <div><h2>Bagaimana usaha Anda sekarang?</h2></div>
+      <span class="kartu__note">makin tinggi makin baik</span>{% endif %}
+    </div>
+
+    <div class="skor">
+      <div>
+        {{ meter(busur, skor.status, skor.kategori) }}
+        <div class="stempel {{ 'stempel--perlu' if skor.status != 'Berhasil' }}">
+          {{ skor.status }}
+          <small>{% if mode == "riset" %}rule-based · ambang 50{% else %}batas “sudah bagus” di angka 50{% endif %}</small>
+        </div>
+      </div>
+
+      <div class="rekom" style="gap:10px">
+        <div class="grid grid--dua" style="gap:10px">
+          <div class="stat">
+            <div class="stat__label">Total rekomendasi</div>
+            <div class="stat__nilai">{{ rekomendasi|length }}</div>
+          </div>
+          <div class="stat">
+            <div class="stat__label">{{ 'Rata-rata pilar' if mode == 'riset' else 'Rata-rata tiga bagian' }}</div>
+            <div class="stat__nilai">{{ skor.pilar_total }}</div>
+          </div>
+        </div>
+        <div class="teks-kecil" style="border:1.5px dashed var(--garis);padding:11px 12px;border-radius:3px;background:#f7f9f4">
+          {% if mode == 'riset' %}
+          Skor {{ '%.1f'|format(skor.skor)|replace(".",",") }} → status <b>{{ skor.status }}</b> (ambang 50).
+          {% else %}
+          Usaha Anda {% if skor.skor >= 60 %}sudah jalanny{% elif skor.skor >= 45 %}masih bisa ditolong{% else %}butuh perhatian{% endif %} —
+          satu langkah di atas adalah yang paling murah dikerjakan untuk hasilnya.
+          {% endif %}
+        </div>
+        <details class="jelas">
+          <summary>Kenapa angka saya {% if mode=='riset' %}sebegitu{% else %}naik atau turun{% endif %}?</summary>
+          <table class="buku">
+            <thead><tr><th>Yang dinilai</th><th style="text-align:right">Nilai Anda</th><th style="text-align:right">Paling besar</th></tr></thead>
+            <tbody>
+              {% for nama, poin, maksimal in kontribusi %}
+              <tr><td>{{ nama }}</td><td class="n">{{ poin }}</td><td class="n">{{ maksimal }}</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </details>
+        {% if alasan %}
+        <div class="pakai">
+          <b>{% if mode == 'riset' %}indikator terverifikasi otomatis{% else %}sistem menyesuaikan sendiri{% endif %}</b>
+          {% for a in alasan %}<div>• {{ a }}</div>{% endfor %}
+        </div>
+        {% endif %}
+        <div class="terakhir">
+          {% if mode == 'riset' %}Perhitungan terakhir: {{ terakhir.calculated_at if terakhir else 'belum ada' }}
+          {% else %}Angka ini berubah sendiri setiap kali Anda menyimpan catatan.{% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>{{ 'Sebaran 3 pilar' if mode == 'riset' else 'Tiga bagian usaha Anda' }}</h2><span class="kartu__note">{{ '0–100' if mode == 'riset' else 'makin lebar makin baik' }}</span></div>
+    <div class="grafik grafik--radar">
+      <svg viewBox="0 0 {{ jaring.lebar }} {{ jaring.tinggi }}" width="{{ jaring.lebar }}" height="{{ jaring.tinggi }}"
+           role="img" aria-label="Radar tiga pilar">
+        {% for cincin in jaring.cincin %}
+        <polygon points="{{ cincin }}" fill="none" stroke="{{ 'var(--tinta)' if loop.last else 'var(--garis)' }}"
+                 stroke-width="{{ 1.5 if loop.last else 1 }}" {{ 'stroke-dasharray="3 3"'|safe if not loop.last else '' }}></polygon>
+        {% endfor %}
+        {% for s in jaring.sumbu %}
+        <line x1="{{ jaring.cx }}" y1="{{ jaring.cy }}" x2="{{ s.x2 }}" y2="{{ s.y2 }}" stroke="var(--garis)" stroke-width="1"></line>
+        {% endfor %}
+        <polygon points="{{ jaring.poligon }}" fill="rgba(179,120,26,.18)" stroke="var(--emas)" stroke-width="2.5" stroke-linejoin="round"></polygon>
+        {% for l in jaring.label %}
+        <text x="{{ l.x }}" y="{{ l.y }}" text-anchor="{{ l.anchor }}" class="sumbu" style="font-size:14px;font-weight:700;letter-spacing:0;fill:var(--tinta);paint-order:stroke;stroke:#fff;stroke-width:4px">{{ l.nama }}</text>
+        <text x="{{ l.x }}" y="{{ (l.y)|float + 17 }}" text-anchor="{{ l.anchor }}" class="sumbu" style="font-size:13px;fill:var(--emas);font-weight:600;paint-order:stroke;stroke:#fff;stroke-width:4px">{{ l.nilai }}%</text>
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="grid grid--tiga" style="gap:9px;margin-top:4px">
+      {% for nama, isi, kelas, tautan in [
+        (('Pilar 1 — Keuangan' if mode == 'riset' else 'Catat uang'), skor.pilar.keuangan, 'pilar--hijau', '/keuangan'),
+        (('Pilar 2 — Perencanaan' if mode == 'riset' else 'Rencana usaha'), skor.pilar.perencanaan, 'pilar--emas', '/rencana'),
+        (('Pilar 3 — Pemasaran' if mode == 'riset' else 'Jualan online'), skor.pilar.pemasaran, 'pilar--langit', '/pemasaran')] %}
+      <a class="pilar {{ kelas }}" href="{{ tautan }}" style="text-decoration:none;color:inherit">
+        <span class="pilar__label">{{ nama.split("— ")[1] if "—" in nama else nama }}</span>
+        <span class="pilar__nilai">{{ isi }}<small>%</small></span>
+        <span class="meter"><i style="width:{{ isi }}%"></i></span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="pilah"><span>{% if mode == 'riset' %}Rekomendasi perbaikan — urutan dari business rules{% else %}Kalau sempat, kerjakan juga yang ini{% endif %}</span></div>
+  <div class="rekom">
+    {% for r in lainnya %}
+    <div class="rekom__item rekom__item--{{ r.prioritas }}">
+      <span class="rekom__angka">{{ '%02d'|format(loop.index + 1) }}</span>
+      <span class="rekom__isi">
+        <h4>{{ r.judul }}</h4>
+        <p>{{ r.ajakan if mode != 'riset' else r.pesan }}</p>
+        {% if r.langsung %}
+        <form method="post" action="/tindak" style="margin-top:8px">
+          <input type="hidden" name="kode" value="{{ r.kode }}">
+          {% if r.kode == 'catat' %}<input type="hidden" name="jumlah" value="{{ preset.nominal }}">
+          <input type="hidden" name="kategori" value="{{ preset.kategori }}">{% endif %}
+          <button class="tombol tombol--kecil" type="submit">{{ r.tombol }}</button>
+        </form>
+        {% else %}
+        <a class="tombol tombol--kecil" style="margin-top:8px" href="{{ r.tautan }}">{{ r.tombol }}</a>
+        {% endif %}
+        <a class="tautan-jalan" href="{{ r.tautan }}">buka halamannya ›</a>
+      </span>
+      <span class="rekom__dampak">
+        <span class="kapsul k-{{ r.warna }}">{% if mode == 'riset' %}{{ r.prioritas }}{% else %}± {{ r.waktu_menit }} menit{% endif %}</span><br>{{ r.dampak }}
+      </span>
+    </div>
+    {% endfor %}
+    {% if not lainnya %}
+    <p class="teks-kecil" style="margin:0">Belum ada tambahan yang perlu dikerjakan. Fokus ke satu langkah di atas.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="grid grid--lebar">
+  <div class="kartu">
+    <div class="kartu__kepala">
+      <h2>Arus kas 6 bulan</h2>
+      <span class="kartu__note">omzet vs biaya · rupiah</span>
+    </div>
+    {% if chart %}
+    <div class="grafik">
+      <svg viewBox="0 0 {{ chart.lebar }} {{ chart.tinggi }}" width="{{ chart.lebar }}" height="{{ chart.tinggi }}" role="img" aria-label="Grafik tren omzet dan biaya">
+        {% for g in chart.grid %}
+        <line class="garis-grid" x1="{{ chart.kiri }}" y1="{{ g.y }}" x2="{{ chart.lebar - 10 }}" y2="{{ g.y }}"></line>
+        <text class="sumbu" x="{{ chart.kiri - 5 }}" y="{{ (g.y)|float + 3 }}" text-anchor="end">{{ g.label }}</text>
+        {% endfor %}
+        <line class="garis-batas" x1="{{ chart.kiri }}" y1="{{ chart.dasar }}" x2="{{ chart.lebar - 10 }}" y2="{{ chart.dasar }}"></line>
+        {% for j in chart.jalur %}
+          {% set pertama = loop.first %}
+          {% if j.area %}<path class="area-omzet" d="{{ j.area }}"></path>{% endif %}
+          <polyline class="{{ 'jalur-omzet' if pertama else 'jalur-biaya' }}" points="{{ j.points }}"></polyline>
+          {% for t in j.titik %}
+          <circle class="{{ 'dot-omzet' if pertama else 'dot-biaya' }}" cx="{{ t.cx }}" cy="{{ t.cy }}" r="3.4">
+            <title>{{ j.nama }} {{ t.bulan }}: {{ t.nilai|rp }}</title>
+          </circle>
+          {% endfor %}
+        {% endfor %}
+        {% for sx in chart.sumbu_x %}
+        <text class="sumbu" x="{{ sx.x }}" y="{{ chart.tinggi - 10 }}" text-anchor="middle">{{ sx.label }}</text>
+        {% endfor %}
+      </svg>
+    </div>
+    <div class="legend">
+      <span class="omzet"><i></i>Omzet</span>
+      <span class="biaya"><i></i>Biaya</span>
+      <span>Selisih 6 bulan: <b style="font-family:var(--data);color:{{ 'var(--hijau)' if modul.net > 0 else 'var(--cabai)' }}">{{ modul.net|rp }}</b></span>
+    </div>
+    {% else %}
+    <div class="kosong"><b>Belum ada transaksi tercatat</b>Masukkan satu penjualan di modul Keuangan, grafik ini langsung terisi.</div>
+    {% endif %}
+  </div>
+
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>Posisi Anda vs 250 UMKM</h2><span class="kartu__note">% keterpenuhan</span></div>
+    <div class="grid" style="gap:13px">
+      {% for b in banding %}
+      <div class="tb">
+        <div class="tb__kepala">
+          <span>{{ b.label }}</span>
+          <span><b>{{ '%.0f'|format(b.anda) }}%</b> Anda · <i>garis = rata-rata {{ '%.0f'|format(b.acuan) }}%</i></span>
+        </div>
+        <span class="tb__jalur">
+          <i style="width:{{ b.lebar }}%;background:var(--{{ b.warna }})"></i>
+          <b style="left:{{ b.lebar_acuan }}%"></b>
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="kartu__kaki">Bar panjang = seberapa lengkap kebiasaan Anda pada skala 0–100; garis tegak = rata-rata {{ total_umkm }} UMKM yang diteliti.</div>
+  </div>
+</section>
+
+<section class="grid grid--dua">
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>{{ 'Riwayat skor' if mode == 'riset' else 'Riwayat nilai usaha' }}</h2><span class="kartu__note">{{ riwayat|length }} rekaman</span></div>
+    {% if riwayat_kolom.bars %}
+    <div class="grafik">
+      <svg viewBox="0 0 {{ riwayat_kolom.lebar }} {{ riwayat_kolom.tinggi }}" width="{{ riwayat_kolom.lebar }}" height="{{ riwayat_kolom.tinggi }}" role="img" aria-label="Riwayat skor">
+        <line class="garis-batas" x1="0" y1="{{ riwayat_kolom.dasar }}" x2="{{ riwayat_kolom.lebar }}" y2="{{ riwayat_kolom.dasar }}"></line>
+        <line class="garis-ambang" x1="0" y1="{{ riwayat_kolom.garis_ambang }}" x2="{{ riwayat_kolom.lebar }}" y2="{{ riwayat_kolom.garis_ambang }}"></line>
+        {% for bt in riwayat_kolom.bars %}
+        <rect class="kolom-skor" x="{{ bt.x }}" y="{{ bt.y }}" width="{{ bt.w }}" height="{{ bt.h }}">
+          <title>{{ bt.label }}: skor {{ bt.nilai }}</title>
+        </rect>
+        <text class="sumbu" x="{{ (bt.x)|float + (bt.w)|float / 2 }}" y="{{ riwayat_kolom.tinggi - 8 }}" text-anchor="middle">{{ bt.label }}</text>
+        {% endfor %}
+        <text class="sumbu" x="{{ riwayat_kolom.lebar - 4 }}" y="{{ (riwayat_kolom.garis_ambang)|float - 5 }}" text-anchor="end" style="fill:var(--cabai)">ambang 50</text>
+      </svg>
+    </div>
+    {% else %}
+    <div class="kosong"><b>Rekaman skor belum ada</b>Setiap perubahan di modul tersimpan sebagai riwayat skor.</div>
+    {% endif %}
+  </div>
+
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>{{ 'Biaya terbesar 90 hari' if mode == 'riset' else 'Pengeluaran paling besar' }}</h2><span class="kartu__note">kategori</span></div>
+    {% if kategori %}
+    <table class="buku">
+      <tbody>
+      {% for k in kategori %}
+        <tr>
+          <td>{{ k.kategori }}</td>
+          <td class="n">{{ k.total|rp }}</td>
+          <td style="width:38%"><span class="meter"><i style="width:{{ (k.total / kategori[0].total * 100)|round(1) }}%"></i></span></td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="kosong"><b>Belum ada pengeluaran</b>Catat biaya bahan baku agar margin usaha terbaca.</div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

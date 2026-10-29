@@ -1,0 +1,201 @@
+{% extends "muk.html" %}
+{% block judul %}Catat uang masuk &amp; keluar{% endblock %}
+{% block kicker %}Bagian paling berpengaruh untuk nilai usaha Anda{% endblock %}
+{% block sapa %}uang usaha <b>{{ profil.nama_usaha }}</b> hari ini.{% endblock %}
+{% block aksi %}{% endblock %}
+
+{% block isi %}
+<section class="catat">
+  <div class="catat__kotak">
+    <p class="catat__tanya">Hari ini uang apa yang bergerak?</p>
+
+    <form method="post" class="catat__form" id="form-catat">
+      <input type="hidden" name="aksi" value="catat">
+      <input type="hidden" name="jenis" id="jenis" value="masuk">
+
+      <div class="catat__pilih">
+        <button type="button" class="pil pil--masuk aktif" data-jenis="masuk" aria-pressed="true">
+          <b>Uang masuk</b><span>ada yang beli / terima pesanan</span>
+        </button>
+        <button type="button" class="pil pil--keluar" data-jenis="keluar" aria-pressed="false">
+          <b>Uang keluar</b><span>beli bahan, bayar ini itu</span>
+        </button>
+      </div>
+
+      <label class="label-besar" for="jumlah">Berapa rupiahnya?</label>
+      <div class="nominal">
+        <span class="nominal__rp" aria-hidden="true">Rp</span>
+        <input id="jumlah" name="jumlah" inputmode="numeric" autocomplete="off" autofocus
+               placeholder="0" aria-describedby="bilang">
+      </div>
+      <p class="bilang num" id="bilang" aria-live="polite">Rp 0</p>
+
+      <div class="chip-nominal" data-grup-jenis="masuk" role="group" aria-label="Nominal yang sering Anda pakai">
+        {% for n in chip.masuk %}
+        <button type="button" class="chip" data-jumlah="{{ n }}" data-jenis="masuk">{{ n|rp }}</button>
+        {% endfor %}
+      </div>
+      <div class="chip-nominal" data-grup-jenis="keluar" hidden role="group" aria-label="Nominal pengeluaran yang sering">
+        {% for n in chip.keluar %}
+        <button type="button" class="chip" data-jumlah="{{ n }}" data-jenis="keluar">{{ n|rp }}</button>
+        {% endfor %}
+      </div>
+
+      <details class="lengkap">
+        <summary>Lengkapi catatan (kalau perlu saja)</summary>
+        <div class="baris-2">
+          <div class="lapang"><label for="kategori">Untuk apa?</label>
+            <input id="kategori" name="kategori" list="daftar-kategori" placeholder="{{ saran.sering[0].kategori if saran.sering else 'Penjualan' }}">
+            <datalist id="daftar-kategori">
+              {% for k in ['Penjualan','Jasa','Titip warung','Bahan baku','Bensin','Listrik & air','Sewa tempat','Gaji','Kemasan','Kuota internet','Transport'] %}
+              <option value="{{ k }}">{% endfor %}
+            </datalist>
+          </div>
+          <div class="lapang"><label for="tanggal">Kapan?</label>
+            <input id="tanggal" name="tanggal" type="date" value="{{ hari_ini }}"></div>
+        </div>
+        <div class="lapang"><label for="keterangan">Catatan kecil <span class="ultup">(kosongkan saja kalau malas)</span></label>
+          <input id="keterangan" name="keterangan" placeholder="misalnya: Bu Rina beli 3 kotak"></div>
+      </details>
+
+      <button class="tombol tombol--utama simpan-besar" type="submit">Simpan catatan ini</button>
+      <p class="ultup" style="text-align:center;margin:8px 0 0">
+        Tidak perlu diisi semua — tombolnya tetap jalan kalau hanya nominal yang Anda tulis.
+      </p>
+    </form>
+  </div>
+
+  <div class="catat__samping">
+    {% if saran.sering %}
+    <div class="kartu kartu--rapat">
+      <div class="kartu__kepala"><h2>Sering Anda catat</h2></div>
+      <div class="ulang">
+        {% for s in saran.sering[:4] %}
+        <form method="post">
+          <input type="hidden" name="aksi" value="catat">
+          <input type="hidden" name="jenis" value="{{ s.jenis }}">
+          <input type="hidden" name="kategori" value="{{ s.kategori }}">
+          <input type="hidden" name="jumlah" value="{{ s.jumlah }}">
+          <button class="ulang__item">
+            <span class="kapsul {{ 'k-hijau' if s.jenis=='masuk' else 'k-merah' }}">{{ '+' if s.jenis=='masuk' else '−' }}</span>
+            <span class="ulang__nama">{{ s.kategori }}</span>
+            <b class="num">{{ s.jumlah|rp }}</b>
+            <em>{{ s.n }}× terakhir</em>
+          </button>
+        </form>
+        {% endfor %}
+      </div>
+      <div class="kartu__kaki">Sekali klik = satu baris buku kas hari ini tercatat.</div>
+    </div>
+    {% endif %}
+
+    <div class="kartu kartu--rapat {{ 'pilar--hijau' if skor.pilar.keuangan >= 60 else 'pilar--cabai' }}">
+      <div class="kartu__kepala"><h2>Kondisi pembukuan</h2></div>
+      <div class="pilar pilar--hijau">
+        <span class="pilar__nilai">{{ skor.pilar.keuangan }}<small>/100</small></span>
+        <span class="meter"><i style="width:{{ skor.pilar.keuangan }}%"></i></span>
+      </div>
+      <ul class="cek">
+        <li class="{{ 'ok' if profil.financial_record_keeping }}">{{ 'sudah' if profil.financial_record_keeping else 'belum' }} mencatat pemasukan &amp; pengeluaran</li>
+        <li class="{{ 'ok' if modul.hari_catat_30hari >= 10 }}">{{ modul.hari_catat_30hari }} dari 30 hari terakhir ada catatannya</li>
+        <li class="{{ 'ok' if modul.margin > 0 }}">uang masuk lebih besar dari uang keluar</li>
+      </ul>
+      {% if alasan %}
+      <div class="kartu__kaki">
+        {% for a in alasan %}<div>✓ {{ a }}</div>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="grid grid--lebar">
+  <div class="kartu" id="buku">
+    <div class="kartu__kepala">
+      <h2>Buku kas Anda</h2>
+      <span class="kartu__note">{{ modul.jumlah_transaksi }} baris tersimpan</span>
+    </div>
+
+    <div class="lapang" style="max-width:280px;margin-bottom:10px">
+      <label for="saring-buku">Cari di buku kas</label>
+      <input id="saring-buku" type="search" placeholder="kategori, tanggal, keterangan…">
+    </div>
+
+    {% if isi %}
+    <div class="tabel-gulir">
+      <table class="buku" data-buku>
+        <thead>
+          <tr><th>Tanggal</th><th>Untuk apa</th><th>Keterangan</th><th style="text-align:right">Jumlah</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for baris in isi %}
+          <tr>
+            <td class="num">{{ baris.tanggal|tgl }}</td>
+            <td><span class="tanda {{ 'masuk' if baris.jenis=='masuk' else 'keluar' }}">{{ baris.kategori }}</span></td>
+            <td class="teks-kecil" style="color:var(--tinta-3)">{{ baris.keterangan or '—' }}</td>
+            <td class="n {{ baris.jenis }}">{{ ('+' if baris.jenis=='masuk' else '−') }} {{ baris.jumlah|rp }}</td>
+            <td>
+              <form method="post">
+                <input type="hidden" name="hapus" value="{{ baris.id }}">
+                <button class="hapus" aria-label="Hapus catatan {{ baris.kategori }} {{ baris.jumlah|rp }}">hapus</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">Sisa uang usaha Anda (masuk − keluar)</td>
+            <td class="n {{ 'masuk' if saldo >= 0 else 'keluar' }}">{{ saldo|rp }}</td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="batal-bar">
+      <form method="post">
+        <input type="hidden" name="aksi" value="batal">
+        <button class="tombol tombol--kecil tombol--hantu">Batalkan hapusan terakhir</button>
+      </form>
+      <span class="ultup">Baris tidak hilang permanen, jadi salah hapus masih bisa diperbaiki.</span>
+    </div>
+    {% else %}
+    <div class="kosong"><b>Belum ada satu pun catatan</b>Tekan tombol hijau besar di atas, ketik nominalnya, selesai.</div>
+    {% endif %}
+  </div>
+
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>Laporan per bulan</h2><span class="kartu__note">masuk · keluar · sisa</span></div>
+    {% if bulanan %}
+    <table class="buku">
+      <tbody>
+        {% for b in bulanan %}
+        <tr>
+          <td class="num">{{ b.bulan }}</td>
+          <td class="n masuk">{{ b.masuk|rp }}</td>
+          <td class="n keluar">{{ b.keluar|rp }}</td>
+          <td class="n {{ 'masuk' if b.masuk - b.keluar >= 0 else 'keluar' }}">{{ (b.masuk - b.keluar)|rp }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="kosong"><b>Laporan muncul sendiri</b>Setiap baris buku kas dihitung per bulan, tanpa perlu Anda susun.</div>
+    {% endif %}
+  </div>
+</section>
+
+<details class="jelas">
+  <summary>Kenapa bagian ini saya tempatkan paling depan?</summary>
+  <p class="teks-kecil" style="margin:0;max-width:80ch">
+    Dari {{ total_umkm|default(250) }} data UMKM yang diolah, pencatatan keuangan punya hubungan paling kuat
+    dengan keberhasilan usaha (<b>r = 0,568</b>): yang mencatat rutin berhasil <b>77,9%</b>, yang tidak hanya
+    <b>21,1%</b> — selisih 56,8 poin. Karena itu bagian ini saya beri bobot paling besar (25 dari 100), sehingga sistem
+    menempatkannya sebagai tindakan pertama dan memverifikasinya sendiri dari isi buku kas Anda.
+  </p>
+</details>
+{% endblock %}
+
+{% block skrip %}
+<script src="{{ url_for('static', filename='js/catat.js') }}" defer></script>
+{% endblock %}

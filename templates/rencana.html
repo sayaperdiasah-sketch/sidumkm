@@ -1,0 +1,117 @@
+{% extends "muk.html" %}
+{% block judul %}Rencana saya{% endblock %}
+{% block kicker %}Target usaha {{ profil.nama_usaha }} tiga bulan ke depan{% endblock %}
+{% block sapa %}{% if r %}target Anda {{ r.target_omzet|rp }} sebulan, capaian sejauh ini {{ '%.0f'|format(modul.progress_target) }}%.{% else %}sistem sudah menyiapkan isian untuk Anda.{% endif %}{% endblock %}
+{% block aksi %}{% endblock %}
+
+{% set r = draf or modul.rencana %}
+{% block isi %}
+
+{% if draf %}
+<div class="kartu kunci" style="border-left:5px solid var(--hijau)">
+  <div class="kartu__kepala" style="border:0;margin:0;padding:0 0 8px">
+    <h2>Isian ini saya hitung dari catatan uang Anda</h2>
+    <span class="kartu__note">silakan ubah angkanya kalau kurang pas</span>
+  </div>
+  <ul class="asal">
+    <li><span>target omzet</span><b>{{ draf.target_omzet|rp }}</b><em>rata-rata uang masuk 3 bulan +10%</em></li>
+    <li><span>modal yang dipakai</span><b>{{ draf.modal_usaha|rp }}</b><em>rata-rata uang keluar bulanan</em></li>
+    <li><span>produk unggulan</span><b>{{ draf.produk_utama or 'belum dipilih' }}</b><em>produk pertama di katalog Anda</em></li>
+  </ul>
+</div>
+{% endif %}
+
+<section class="grid grid--lebar">
+  <div class="kartu">
+    <div class="kartu__kepala">
+      <h2>Rencana satu halaman</h2>
+      <span class="kartu__note">{{ modul.kelengkapan_isian }} dari 5 bagian terisi</span>
+    </div>
+
+    <form method="post" id="form-rencana">
+      <div class="lapang"><label for="judul">Kalau diringkas, rencana Anda tentang apa?</label>
+        <input id="judul" name="judul" value="{{ r.judul or 'Rencana 3 bulan ke depan' }}"></div>
+
+      <div class="baris-2">
+        <div class="lapang"><label for="target_omzet">Target uang masuk sebulan</label>
+          <div class="nominal nominal--kecil"><span class="nominal__rp">Rp</span>
+            <input id="target_omzet" name="target_omzet" inputmode="numeric" class="rupiah"
+                   value="{{ '{:,}'.format(r.target_omzet|int).replace(',', '.') if r.target_omzet else '' }}"
+                   placeholder="misalnya 9.000.000"></div></div>
+        <div class="lapang"><label for="modal_usaha">Modal yang dipakai sebulan</label>
+          <div class="nominal nominal--kecil"><span class="nominal__rp">Rp</span>
+            <input id="modal_usaha" name="modal_usaha" inputmode="numeric" class="rupiah"
+                   value="{{ '{:,}'.format(r.modal_usaha|int).replace(',', '.') if r.modal_usaha else '' }}"
+                   placeholder="misalnya 6.000.000"></div></div>
+      </div>
+
+      <div class="lapang"><label for="produk_utama">Apa yang paling mengandalkan penjualan?</label>
+        <input id="produk_utama" name="produk_utama" value="{{ r.produk_utama or '' }}"
+               placeholder="misalnya nasi uduk pagi"></div>
+
+      <div class="lapang"><label for="strategi_pemasaran">Bagaimana caranya orang tahu Anda jualan?</label>
+        <textarea id="strategi_pemasaran" name="strategi_pemasaran"
+                  placeholder="misalnya: posting foto tiap Jumat di WhatsApp, titip 10 brosur di warung">{{ r.strategi_pemasaran or '' }}</textarea></div>
+
+      <div class="lapang"><label for="analisis_risiko">Apa yang paling Anda khawatirkan?</label>
+        <textarea id="analisis_risiko" name="analisis_risiko"
+                  placeholder="misalnya: harga telur naik, modal tertahan di stok">{{ r.analisis_risiko or '' }}</textarea></div>
+
+      <div class="baris-2">
+        <div class="lapang"><label for="deadline">Sampai kapan target ini?</label>
+          <input id="deadline" name="deadline" type="date" value="{{ r.deadline or hari_depan }}"></div>
+        <div class="lapang"><label for="progress">Menurut Anda sudah berapa persen? <span class="ultup">(tebak saja)</span></label>
+          <input id="progress" name="progress" type="number" min="0" max="100" inputmode="numeric"
+                 value="{{ r.progress or 0 }}"></div>
+      </div>
+
+      <button class="tombol tombol--utama simpan-besar" type="submit">Simpan rencana saya</button>
+      <p class="ultup" style="text-align:center;margin:9px 0 0">Setelah disimpan, progress dihitung sendiri dari catatan uang Anda.</p>
+    </form>
+  </div>
+
+  <div>
+    <div class="kartu kartu--rapat" style="margin-bottom:16px">
+      <div class="kartu__kepala"><h2>Kondisi rencana</h2></div>
+      <div class="pilar pilar--emas">
+        <span class="pilar__nilai">{{ skor.pilar.perencanaan }}<small>/100</small></span>
+        <span class="meter"><i style="width:{{ skor.pilar.perencanaan }}%"></i></span>
+      </div>
+      <ul class="cek">
+        <li class="{{ 'ok' if profil.business_plan }}">rencana sudah ditulis, bukan cuma di kepala</li>
+        <li class="{{ 'ok' if r and r.target_omzet }}">ada angka target yang bisa dikejar</li>
+        <li class="{{ 'ok' if r and r.deadline }}">ada batas waktunya</li>
+        <li class="{{ 'ok' if modul.progress_target >= 60 }}">penjualan bulan ini sudah mendekati target</li>
+      </ul>
+    </div>
+
+    <div class="kartu kartu--rapat">
+      <div class="kartu__kepala"><h2>Capaian target</h2><span class="kartu__note">{{ '%.0f'|format(modul.progress_target) }}%</span></div>
+      {% if r and r.target_omzet %}
+      <div class="pilar pilar--hijau">
+        <span class="pilar__label">Uang masuk bulan ini {{ modul.omzet_bulan_ini|rp }} dari {{ r.target_omzet|rp }}</span>
+        <span class="pilar__nilai">{{ '%.0f'|format(modul.progress_target) }}<small>%</small></span>
+        <span class="meter"><i style="width:{{ [modul.progress_target, 100]|min }}%"></i></span>
+      </div>
+      <p class="teks-kecil" style="margin:10px 0 0">Angka ini mengambil dari buku kas, bukan dari hitungan manual.</p>
+      {% else %}
+      <div class="kosong"><b>Belum ada target</b>Isi “target uang masuk sebulan” di kiri — capaian akan dihitung otomatis.</div>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<details class="jelas">
+  <summary>Kenapa bagian rencana diberi nilai terpisah?</summary>
+  <p class="teks-kecil" style="margin:0;max-width:80ch">
+    UMKM yang punya rencana tertulis berhasil <b>70,2%</b> versus <b>25,2%</b> yang tidak — selisih 45,0 poin
+    (korelasi r = 0,450, terbesar kedua). Karena itu bagian ini berbobot 20 poin dari 100, dan nilainya
+    menilai empat hal: ada/tidaknya rencana (35%), kelengkapan butir (25%), capaian target dari omzet riil (25%),
+    serta adanya batas waktu (15%).
+  </p>
+</details>
+{% endblock %}
+
+{% block skrip %}
+<script src="{{ url_for('static', filename='js/rupiah.js') }}" defer></script>
+{% endblock %}

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block judul %}SIDUMKM — pendamping usaha kecil{% endblock %}</title>
+<meta name="description" content="Catat uang, rencana, dan produk usaha kecil Anda. Nilai usaha dihitung dari aturan yang terbuka.">
+<meta name="theme-color" content="#14241c">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="SIDUMKM">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/static/img/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="/static/img/icon-192.png">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/stempel.css') }}">
+</head>
+<body>
+{% block tubuh %}{% endblock %}
+<script src="{{ url_for('static', filename='js/buku.js') }}" defer></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("/sw.js").catch(function () {});
+    });
+  }
+</script>
+{% block skrip %}{% endblock %}
+</body>
+</html>

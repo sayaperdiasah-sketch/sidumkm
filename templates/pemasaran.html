@@ -1,0 +1,122 @@
+{% extends "muk.html" %}
+{% block judul %}Produk saya{% endblock %}
+{% block kicker %}{{ 'Pilar 3 · bobot 15 + 10 · r = 0,239' if mode == 'riset' else 'Bikin katalog, lalu kirim ke WhatsApp pembeli' }}{% endblock %}
+{% block sapa %}{{ produk|length }} produk siap dilihat orang.{% endblock %}
+{% block aksi %}
+<a class="tombol tombol--kecil" href="{{ url_for('toko', slug=user.toko_slug) }}" target="_blank">Buka halaman publik</a>
+{% endblock %}
+
+{% set link_publik = request.host_url.rstrip('/') + url_for('toko', slug=user.toko_slug) %}
+{% block isi %}
+<section class="grid grid--lebar">
+  <div>
+    <div class="pilah"><span>Katalog produk — tampil di halaman publik {{ user.toko_slug }}</span></div>
+    {% if produk %}
+    <div class="terbit" style="margin-top:0">
+      {% if request.args.get('tambah') %}<p class="ultup" style="margin-top:0">Kolom di kanan sudah dibuka — isi namanya saja, sisanya boleh kosong.</p>{% endif %}
+      {% for p in produk %}
+      <div class="terbit__item" style="{{ 'opacity:.55' if not p.aktif }}">
+        <div class="terbit__foto">{{ p.foto_teks }}</div>
+        <div>
+          <h3>{{ p.nama_produk }}</h3>
+          <div class="terbit__harga">{{ p.harga|rp }}</div>
+        </div>
+        <p class="terbit__desc">{{ p.deskripsi or 'Belum ada deskripsi produk.' }}</p>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <form method="post">
+            <input type="hidden" name="aksi" value="toggle"><input type="hidden" name="id" value="{{ p.id }}">
+            <button class="tombol tombol--kecil tombol--hantu">{{ 'Sembunyikan' if p.aktif else 'Tampilkan' }}</button>
+          </form>
+          <form method="post" data-konfirmasi="Hapus {{ p.nama_produk }} dari katalog?">
+            <input type="hidden" name="aksi" value="hapus"><input type="hidden" name="id" value="{{ p.id }}">
+            <button class="tombol tombol--kecil tombol--bahaya">Hapus</button>
+          </form>
+          <a class="terbit__wa" style="flex:1" target="_blank"
+             href="https://wa.me/?text={{ (p.nama_produk ~ ' — ' ~ (p.harga|rp) ~ ' (%s)' % link_publik) | urlencode }}">
+            Kirim ke WhatsApp</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="kosong"><b>Katalog masih kosong</b>Tambahkan produk pertama — halaman publik langsung punya isi untuk dibagikan.</div>
+    {% endif %}
+  </div>
+
+  <div>
+    <div class="kartu" style="margin-bottom:16px">
+      <div class="kartu__kepala"><h2>Tambah produk</h2></div>
+      <form method="post">
+        <div class="lapang"><label for="nama_produk">Apa yang Anda jual?</label>
+          <input id="nama_produk" name="nama_produk" required placeholder="Keripik singkong 250 gr"
+                 {{ 'autofocus' if request.args.get('tambah') }}></div>
+        <div class="lapang"><label for="harga">Harganya berapa?</label>
+          <div class="nominal nominal--kecil"><span class="nominal__rp">Rp</span>
+            <input id="harga" class="rupiah" name="harga" inputmode="numeric" placeholder="misalnya 20.000"></div></div>
+        <div class="lapang"><label for="deskripsi">Deskripsi singkat</label>
+          <textarea id="deskripsi" name="deskripsi" placeholder="Dibuat setiap Selasa, tanpa pengawet."></textarea></div>
+        <div class="lapang"><label for="foto_teks">Penanda visual (2–5 karakter)</label>
+          <input id="foto_teks" name="foto_teks" maxlength="5" value="★"></div>
+        <button class="tombol tombol--utama" type="submit" style="width:100%;justify-content:center">Simpan ke katalog</button>
+      </form>
+    </div>
+
+    <div class="kartu">
+      <div class="kartu__kepala"><h2>{{ 'Skor Pilar 3' if mode == 'riset' else 'Seberapa rajin Anda promosi' }}</h2><span class="kartu__note">0–100</span></div>
+      <div class="pilar pilar--langit">
+        <span class="pilar__nilai">{{ skor.pilar.pemasaran }}<small>%</small></span>
+        <span class="meter"><i style="width:{{ skor.pilar.pemasaran }}%"></i></span>
+      </div>
+      <table class="buku" style="margin-top:12px"><tbody>
+        <tr><td>Usaha pemasaran</td><td class="n">{{ profil.marketing_effort }} / 7</td></tr>
+        <tr><td>Pemanfaatan internet</td>
+          <td class="n"><span class="kapsul {{ 'k-hijau' if profil.internet_usage else 'k-merah' }}">
+            {{ 'online' if profil.internet_usage else 'luring' }}</span></td></tr>
+        <tr><td>Produk di katalog</td><td class="n">{{ modul.jumlah_produk }} / 8</td></tr>
+        <tr><td>Saran profesional</td><td class="n">{{ profil.professional_advice }} / 7</td></tr>
+      </tbody></table>
+
+      <form method="post" style="margin-top:14px;border-top:1px dashed var(--garis);padding-top:12px">
+        <input type="hidden" name="aksi" value="usaha">
+        <div class="baris-2">
+          <div class="lapang"><label for="marketing_effort">Usaha pemasaran</label>
+            <input id="marketing_effort" name="marketing_effort" type="number" min="1" max="7" value="{{ profil.marketing_effort }}"></div>
+          <div class="lapang"><label>Internet dipakai?</label>
+            <div class="pilihan"><label><input type="checkbox" name="internet_usage" value="1" {{ 'checked' if profil.internet_usage }}> Ya</label></div></div>
+        </div>
+        <button class="tombol tombol--kecil" type="submit">Simpan kebiasaan ini</button>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="kartu">
+  <div class="kartu__kepala">
+    <h2>Halaman publik Anda</h2>
+    <span class="kartu__note">dibuka tanpa login</span>
+  </div>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+    <code class="num" id="tautan" style="flex:1;min-width:240px;border:1.5px solid var(--garis);padding:9px 10px;background:#f7f9f4">{{ link_publik }}</code>
+    <button class="tombol tombol--kecil" type="button" id="salin" data-tautan="{{ link_publik }}">Salin tautan</button>
+    <a class="tombol tombol--kecil tombol--utama" target="_blank" rel="noopener"
+       href="https://wa.me/?text={{ ('Halo, ini katalog ' ~ profil.nama_usaha ~ ': ' ~ link_publik)|urlencode }}">Kirim ke WhatsApp</a>
+    <form method="post" style="margin:0">
+      <input type="hidden" name="aksi" value="bagikan">
+      <button class="tombol tombol--kecil tombol--hantu" type="submit">Sudah saya sebarkan</button>
+    </form>
+  </div>
+  <p class="teks-kecil" style="margin:10px 0 0">
+    {% if mode == 'riset' %}
+    Mini-website ini dibuat otomatis dari isi katalog. Pemasaran effort tinggi (6–7) berhasil <b>63,6%</b>
+    versus <b>38,1%</b> untuk effort rendah; pemanfaatan internet memberi <b>60,0%</b> versus <b>40,0%</b>.
+    {% else %}
+    Halaman ini bisa dibuka orang tanpa login. Kirim tautannya ke pelanggan atau grup RT —
+    begitu katalog Anda punya isi, status “jualan online” aktif sendiri di nilai usaha Anda.
+    {% endif %}
+  </p>
+</section>
+{% endblock %}
+
+{% block skrip %}
+<script src="{{ url_for('static', filename='js/rupiah.js') }}" defer></script>
+{% endblock %}

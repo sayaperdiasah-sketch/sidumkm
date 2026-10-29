@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+venv/
+.venv/
+
+# Local databases and research data
+*.db
+/data/
+
+# Local secrets
+.env
+.env.*
+
+# Alternate snapshots not used by the active app
+*_1.*

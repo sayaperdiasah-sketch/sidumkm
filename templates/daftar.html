@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block judul %}Mulai — SIDUMKM{% endblock %}
+{% block tubuh %}
+<div class="lembar">
+  <header class="lembar__atas">
+    <div>
+      <span class="merek-nama">SIDU<em>MKM</em></span>
+      <p class="lembar__tagline">Isi keterangan di bawah sekali saja. Sisanya nanti sistem mengikuti
+        kebiasaan Anda saat memakai aplikasi.</p>
+    </div>
+    <ol class="langkah-kecil" aria-label="Langkah pengisian">
+      <li class="aktif">1 · Siapa Anda</li>
+      <li>2 · Usaanya</li>
+      <li>3 · Kebiasaan</li>
+    </ol>
+  </header>
+
+  <form method="post" class="lembar__isi">
+    {% if error %}<div class="pesan pesan--gagal">{{ error }}</div>{% endif %}
+
+    <fieldset>
+      <legend>Siapa Anda?</legend>
+      <div class="baris-2">
+        <div class="lapang"><label for="nama">Nama Anda</label>
+          <input id="nama" name="nama" autocomplete="name" required placeholder="misalnya Budi" value="{{ f.get('nama','') }}"></div>
+        <div class="lapang"><label for="usia">Usia</label>
+          <input id="usia" name="usia" type="number" min="15" max="80" inputmode="numeric" value="{{ f.get('usia',32) }}"></div>
+      </div>
+      <div class="baris-2">
+        <div class="lapang"><label for="email">Email (untuk masuk)</label>
+          <input id="email" name="email" type="email" autocomplete="email" required placeholder="nama@contoh.com" value="{{ f.get('email','') }}"></div>
+        <div class="lapang"><label for="password">Buat sandi (minimal 6 huruf/angka)</label>
+          <div class="sandi-liat">
+            <input id="password" name="password" type="password" minlength="6" required autocomplete="new-password">
+            <button type="button">Lihat</button>
+          </div>
+        </div>
+      </div>
+      <div class="lapang"><label>Laki-laki atau perempuan?</label>
+        <span class="ultup">untuk perbandingan data, tidak mengubah nilai</span>
+        <div class="pilihan">
+          <label><input type="radio" name="owner_gender" value="1" {{ 'checked' if f.get('owner_gender') == '1' }}> Laki-laki</label>
+          <label><input type="radio" name="owner_gender" value="2" {{ 'checked' if f.get('owner_gender') == '2' }}> Perempuan</label>
+        </div>
+      </div>
+      <div class="lapang"><label>Sekolah terakhir</label>
+        <div class="pilihan">
+          {% for nilai, teks in [(1,'SD'),(2,'SMP'),(3,'SMA'),(4,'Diploma'),(5,'S1'),(6,'S2')] %}
+          <label><input type="radio" name="education" value="{{ nilai }}" {{ 'checked' if nilai == 3 }}> {{ teks }}</label>
+          {% endfor %}
+        </div>
+        <span class="ultup">Ini hanya untuk membandingkan Usaha Anda dengan UMKM lain, tidak mengubah nilai.</span>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend>Usaha Anda</legend>
+      <div class="baris-2">
+        <div class="lapang"><label for="nama_usaha">Nama usaha / warung</label>
+          <input id="nama_usaha" name="nama_usaha" required placeholder="misalnya Dapur Sari Rasa" value="{{ f.get('nama_usaha','') }}"></div>
+        <div class="lapang"><label for="jenis_usaha">Isinya jualan apa?</label>
+          <select id="jenis_usaha" name="jenis_usaha">
+            {% for j, t in [('Kuliner','Makanan & minuman'),('Ritel / Sembako','Warung sembako / toko'),
+                            ('Jasa','Jasa (laundry, servis, potong rambut, dll)'),
+                            ('Fashion & Konveksi','Pakaian & konveksi'),
+                            ('Kerajinan','Kerajinan tangan'),('Layanan Digital','Jasa online / pulsa / foto kopi')] %}
+            <option value="{{ j }}">{{ t }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="lapang"><label>Waktu mulai usaha ini</label>
+        <div class="pilihan">
+          {% for v, t in [('0','Baru kurang dari setahun'),('1','1–3 tahun'),('4','3–5 tahun'),('6','Lebih dari 5 tahun')] %}
+          <label><input type="radio" name="tahun" value="{{ v }}"> {{ t }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="lapang"><label>Modal awal dulu sekitar berapa?</label>
+        <div class="pilihan pilihan--tumpuk">
+          {% for kode, (teks, angka) in pilihan_modal %}
+          <label><input type="radio" name="modal" value="{{ kode }}" {{ 'checked' if kode == 2 }}> {{ teks }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <label class="ceklist"><input type="checkbox" name="ortu" value="1"> Orang tua atau keluarga saya sebelumnya juga berdagang</label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Kebiasaan sehari-hari</legend>
+      <div class="lapang"><label>Saat ini, seberapa sering Anda promosi?</label>
+        <div class="pilihan pilihan--tumpuk">
+          {% for angka, teks in pilihan_pemasaran %}
+          <label><input type="radio" name="pemasaran" value="{{ teks }}" {{ 'checked' if angka == 2 }}> {{ teks }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="lapang"><label>Pernah minta masukan soal usaha?</label>
+        <div class="pilihan pilihan--tumpuk">
+          {% for angka, teks in pilihan_saran %}
+          <label><input type="radio" name="saran" value="{{ teks }}"> {{ teks }}</label>
+          {% endfor %}
+        </div>
+      </div>
+      <label class="ceklist"><input type="checkbox" name="mitra" value="1"> Saya ikut komunitas/pasar bersama/kemitraan usaha</label>
+      <div class="info-mesin">
+        <b>Tiga hal ini tidak saya tanyakan lagi — sistem mengecek sendiri:</b>
+        <ul>
+          <li>Apakah Anda mencatat uang masuk &amp; keluar → dilihat dari buku kas Anda.</li>
+          <li>Apakah Anda punya rencana usaha → dilihat dari halaman Rencana saya.</li>
+          <li>Apakah Anda jualan online → dilihat dari katalog &amp; tautan produk Anda.</li>
+        </ul>
+        <span class="ultup">Kalau suatu saat Anda melakukannya, nilainya naik sendiri. Kalau datanya hilang, nilainya turun sendiri.</span>
+      </div>
+    </fieldset>
+
+    <div class="lembar__bawah">
+      <button class="tombol tombol--utama simpan-besar" type="submit">Mulai dashboard saya</button>
+      <p class="ultup" style="text-align:center;margin:10px 0 0">Sudah pernah daftar? <a href="/masuk">Masuk saja</a></p>
+    </div>
+  </form>
+</div>
+{% endblock %}

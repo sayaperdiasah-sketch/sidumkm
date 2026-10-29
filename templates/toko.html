@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block judul %}{{ user.toko_slug }} — katalog SIDUMKM{% endblock %}
+{% block tubuh %}
+<div class="pub">
+  <header class="pub__kepala">
+    <div>
+      <span class="kicker" style="font-family:var(--data);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--tinta-3)">
+        Katalog publik · {{ profil.jenis_usaha }}</span>
+      <div class="pub__nama">{{ profil.nama_usaha }}</div>
+      <p class="teks-kecil" style="margin:8px 0 0">
+        Dikelola oleh {{ user.nama }} · {{ produk|length }} produk aktif · halaman ini dibuat otomatis oleh SIDUMKM.</p>
+    </div>
+    <a class="tombol" href="https://wa.me/?text={{ ('Halo ' ~ user.nama ~ ', saya melihat katalog ' ~ profil.nama_usaha)|urlencode }}">Hubungi via WhatsApp</a>
+  </header>
+
+  {% if produk %}
+  <div class="terbit">
+    {% for p in produk %}
+    <article class="terbit__item">
+      <div class="terbit__foto">{{ p.foto_teks }}</div>
+      <div><h3>{{ p.nama_produk }}</h3><div class="terbit__harga">{{ p.harga|rp }}</div></div>
+      <p class="terbit__desc">{{ p.deskripsi or 'Hubungi penjual untuk detail produk.' }}</p>
+      <a class="terbit__wa" target="_blank"
+         href="https://wa.me/?text={{ ('Saya ingin memesan ' ~ p.nama_produk ~ ' (' ~ (p.harga|rp) ~ ') dari ' ~ profil.nama_usaha)|urlencode }}">
+        Pesan produk ini</a>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="kosong" style="margin-top:24px"><b>Katalog belum dipublikasikan</b>Penjual belum menambahkan produk.</div>
+  {% endif %}
+
+  <footer class="kaki">
+    <span>Halaman publik dari <b>SIDUMKM</b> — Sistem Informasi Dashboard UMKM.</span>
+    <span>Owner login: <a href="{{ url_for('masuk') }}">masuk ke dashboard</a></span>
+  </footer>
+</div>
+{% endblock %}

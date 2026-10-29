@@ -1,0 +1,11 @@
+{% extends "muk.html" %}
+{% block judul %}Halaman tidak ditemukan{% endblock %}
+{% block kicker %}Kesalahan 404{% endblock %}
+{% block sapa %}alamat yang Anda buka tidak ada di sistem.{% endblock %}
+{% block isi %}
+<div class="kosong" style="padding:38px">
+  <b>404 — halaman tidak ditemukan</b>
+  Alamat ini tidak dikenali. <a href="/dashboard">Kembali ke dashboard</a> atau buka
+  <a href="/acuan">statistik acuan</a>.
+</div>
+{% endblock %}

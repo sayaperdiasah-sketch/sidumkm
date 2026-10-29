@@ -1,0 +1,77 @@
+{% extends "muk.html" %}
+{% block judul %}{{ 'Profil &amp; Bobot' if mode == 'riset' else 'Profil usaha' }}{% endblock %}
+{% block kicker %}{{ 'Delapan indikator penentu skor' if mode == 'riset' else 'Keterangan yang menentukan nilai usaha' }}{% endblock %}
+{% block sapa %}<b>{{ profil.nama_usaha }}</b> · {{ profil.jenis_usaha }}.{% endblock %}
+
+{% block isi %}
+<section class="grid grid--lebar">
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>{{ 'Kontribusi tiap indikator' if mode == 'riset' else 'Dari mana nilai usaha Anda' }}</h2><span class="kartu__note">total = {{ skor.skor }} / 100</span></div>
+    <table class="buku">
+      <thead><tr><th>{{ 'Indikator' if mode == 'riset' else 'Yang menentukan nilai' }}</th>
+        <th style="text-align:right">Poin Anda</th>
+        <th style="text-align:right">{{ 'Bobot maks' if mode == 'riset' else 'Paling besar' }}</th>
+        <th style="width:34%">Pencapaian</th></tr></thead>
+      <tbody>
+        {% for nama, poin, maksimal in kontribusi %}
+        <tr>
+          <td>{{ nama }}</td>
+          <td class="n">{{ poin }}</td>
+          <td class="n" style="color:var(--tinta-3)">{{ maksimal }}</td>
+          <td><span class="meter"><i style="width:{{ [poin / maksimal * 100, 100]|min if maksimal else 0 }}%"></i></span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr><td>Skor keberhasilan</td><td class="n">{{ skor.skor }}</td><td class="n">100</td><td></td></tr></tfoot>
+    </table>
+    <p class="teks-kecil" style="margin-bottom:0">
+      Sistem ini <b>bukan machine learning</b>. Bobot di atas ditetapkan dari hasil analisis 250 data UMKM
+      (kuatnya hubungan tiap indikator dengan status keberhasilan), lalu dikenakan sebagai rule-based scoring
+      yang bisa dijelaskan butir per butir.
+    </p>
+  </div>
+
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>Perbarui profil</h2><span class="kartu__note">skor dihitung ulang saat disimpan</span></div>
+    <form method="post">
+      <div class="grid-form-2">
+        <div class="lapang"><label for="nama">Nama pemilik</label><input id="nama" name="nama" value="{{ pengguna.nama }}"></div>
+        <div class="lapang"><label for="nama_usaha">Nama usaha</label><input id="nama_usaha" name="nama_usaha" value="{{ profil.nama_usaha }}"></div>
+      </div>
+      <div class="grid-form-2">
+        <div class="lapang"><label for="jenis_usaha">Jenis usaha</label>
+          <select id="jenis_usaha" name="jenis_usaha">
+            {% for j in ['Kuliner','Ritel / Sembako','Jasa','Fashion & Konveksi','Kerajinan','Layanan Digital'] %}
+            <option value="{{ j }}" {{ 'selected' if profil.jenis_usaha == j }}>{{ j }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="lapang"><label for="initial_capital">Modal awal (Rp)</label>
+          <input id="initial_capital" name="initial_capital" type="number" step="50000" value="{{ profil.initial_capital }}"></div>
+      </div>
+      <div class="grid-form-2">
+        <div class="lapang"><label for="industry_experience">Pengalaman (tahun)</label>
+          <input id="industry_experience" name="industry_experience" type="number" step="0.5" min="0" value="{{ profil.industry_experience }}"></div>
+        <div class="lapang"><label for="marketing_effort">Usaha pemasaran (1–7)</label>
+          <input id="marketing_effort" name="marketing_effort" type="number" min="1" max="7" value="{{ profil.marketing_effort }}"></div>
+      </div>
+      <div class="grid-form-2">
+        <div class="lapang"><label for="professional_advice">Saran profesional (1–7)</label>
+          <input id="professional_advice" name="professional_advice" type="number" min="1" max="7" value="{{ profil.professional_advice }}"></div>
+        <div class="lapang"><label for="parent_business_experience">Pengalaman orang tua</label>
+          <select id="parent_business_experience" name="parent_business_experience">
+            <option value="0" {{ 'selected' if not profil.parent_business_experience }}>Tidak</option>
+            <option value="1" {{ 'selected' if profil.parent_business_experience }}>Ya</option>
+          </select></div>
+      </div>
+      <div class="pilihan" style="margin:6px 0 14px">
+        <label><input type="checkbox" name="financial_record_keeping" value="1" {{ 'checked' if profil.financial_record_keeping }}> Catatan keuangan</label>
+        <label><input type="checkbox" name="business_plan" value="1" {{ 'checked' if profil.business_plan }}> Rencana bisnis</label>
+        <label><input type="checkbox" name="internet_usage" value="1" {{ 'checked' if profil.internet_usage }}> Pemanfaatan internet</label>
+        <label><input type="checkbox" name="partnership" value="1" {{ 'checked' if profil.partnership }}> Kemitraan</label>
+      </div>
+      <button class="tombol tombol--utama" type="submit">Simpan &amp; hitung ulang</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

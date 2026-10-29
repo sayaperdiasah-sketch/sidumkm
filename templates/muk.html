@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% if mode == 'riset' %}
+{% set menu = [
+  ('/dashboard', '0', 'Dashboard', 'Ringkasan skor & rekomendasi'),
+  ('/keuangan', 'P1', 'Keuangan', 'Pilar 1 — arus kas & pencatatan (bobot 25)'),
+  ('/rencana', 'P2', 'Perencanaan', 'Pilar 2 — rencana & target (bobot 20)'),
+  ('/pemasaran', 'P3', 'Pemasaran', 'Pilar 3 — katalog & jangkauan (bobot 25)'),
+  ('/profil', 'PR', 'Profil & Bobot', 'Delapan indikator penentu skor'),
+  ('/acuan', 'AC', 'Statistik Acuan', 'Hasil olahan 250 data UMKM'),
+] %}
+{% else %}
+{% set menu = [
+  ('/dashboard', '1', 'Ringkasan', 'Kondisi usaha Anda & satu langkah berikutnya'),
+  ('/keuangan', '2', 'Catat uang', 'Uang masuk & keluar — paling menentukan'),
+  ('/rencana', '3', 'Rencana saya', 'Target usaha, diisi otomatis dari catatan'),
+  ('/pemasaran', '4', 'Produk saya', 'Katalog & tautan yang bisa dibagikan'),
+  ('/profil', '5', 'Profil usaha', 'Data dasar penentu nilai'),
+  ('/acuan', '6', 'Dari mana angkanya', 'Hasil olahan 250 data UMKM'),
+] %}
+{% endif %}
+{% block tubuh %}
+<div class="rangka">
+  <aside class="sisi">
+    <div class="merek">
+      <span class="merek-nama">SIDU<em>MKM</em></span>
+      <span class="merek-sub">Pendamping usaha kecil</span>
+    </div>
+    <nav class="nav" aria-label="Navigasi utama">
+      {% for href, kode, nama, ket in menu %}
+      {% set chip = {'2': 'keuangan', '3': 'perencanaan', '4': 'pemasaran'}.get(kode) %}
+      <a href="{{ href }}" title="{{ ket }}"{{ ' aria-current="page"'|safe if request.path.startswith(href) }}>
+        <span class="kode" aria-hidden="true">{{ kode }}</span>
+        <span>{{ nama }}{% if chip and samping %}
+          <em style="font-style:normal;font-family:var(--data);font-size:11px;opacity:.65"> {{ samping.pilar[chip] }}</em>
+        {% endif %}</span>
+      </a>
+      {% endfor %}
+    </nav>
+    <div class="sisi-kaki">
+      {% if pengguna %}
+      <b>{{ pengguna.nama }}</b>
+      {% if samping %}Nilai usaha: {{ '%.0f'|format(samping.skor) }}/100 — {{ samping.status|lower }}{% endif %}
+      <div style="margin-top:9px"><a class="keluar" href="/keluar">Keluar</a></div>
+      {% endif %}
+    </div>
+  </aside>
+
+  <main class="utama">
+    <header class="atas">
+      <div>
+        <span class="kicker">{% block kicker %}{% endblock %}</span>
+        <h1>{% block judul %}{% endblock %}</h1>
+        <p class="halo">Halo, <b>{{ pengguna.nama.split(' ')[0] }}</b> — {% block sapa %}{% endblock %}</p>
+      </div>
+      <div class="aksi">
+        {% block aksi %}{% endblock %}
+        <a class="mode" href="/mode/{{ 'riset' if mode == 'sederhana' else 'sederhana' }}"
+           title="Bahasa sederhana untuk pengguna, bahasa riset untuk keperluan naskah">
+          {{ 'Ubah ke bahasa teknis' if mode == 'sederhana' else 'Ubah ke bahasa sehari-hari' }}</a>
+      </div>
+    </header>
+
+    {% with pesan = get_flashed_messages(with_categories=true) %}
+      {% for kategori, isi in pesan %}
+      <div class="pesan {{ 'pesan--gagal' if kategori == 'gagal' else '' }}" role="status" tabindex="-1">{{ isi }}</div>
+      {% endfor %}
+    {% endwith %}
+
+    {% block isi %}{% endblock %}
+
+    <footer class="kaki">
+      <span>Angka di sini dihitung dari kebiasaan Anda sendiri, aturannya terbuka — lihat <a href="/acuan">dari mana angkanya</a>.</span>
+      <span>{% if mode == 'riset' %}Mode riset aktif.{% endif %}</span>
+    </footer>
+  </main>
+</div>
+{% endblock %}

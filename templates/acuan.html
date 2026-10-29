@@ -1,0 +1,98 @@
+{% extends "muk.html" %}
+{% block judul %}{{ 'Statistik Acuan' if mode == 'riset' else 'Dari mana angkanya?' }}{% endblock %}
+{% block kicker %}Hasil olahan {{ total_umkm }} data UMKM{% endblock %}
+{% block sapa %}{{ 'inilah dasar bobot dan kalimat rekomendasi di sistem.' if mode == 'riset' else 'Supaya Anda tahu sistem tidak mengarang angka — semuanya dari ' ~ total_umkm ~ ' usaha yang sudah diteliti.' }}{% endblock %}
+
+{% block isi %}
+<section class="grid grid--tiga">
+  {% for label, nilai, ket in [
+    ('Jumlah respond', total_umkm, 'UMKM mikro & kecil'),
+    ('Pencatatan keuangan baik', '%.0f%%' % ringkas.frk, 'sisanya masih campur atau tidak mencatat'),
+    ('Punya rencana bisnis', '%.0f%%' % ringkas.bp, 'written plan'),
+    ('Pemanfaatan internet', '%.0f%%' % ringkas.inter, 'untuk pemasaran / penjualan'),
+    ('Rata-rata usaha pemasaran', '%.1f' % ringkas.mar, 'skala 1–7'),
+    ('Rata-rata pengalaman', '%.1f thn' % ringkas.exp, 'di industri yang sama')] %}
+  <div class="kartu">
+    <span class="pilar__label">{{ label }}</span>
+    <div class="stat__nilai">{{ nilai }}</div>
+    <div class="teks-kecil" style="margin-top:4px">{{ ket }}</div>
+  </div>
+  {% endfor %}
+</section>
+
+<section>
+  <div class="pilah"><span>Tabel aturan yang diturunkan dari data</span></div>
+  <div class="kartu" style="padding:0;overflow:hidden">
+    <table class="buku buku--acuan" style="margin:0">
+      <thead><tr>
+        <th>Indikator</th><th>Ambang</th><th style="text-align:right">% berhasil<br>dengan</th>
+        <th style="text-align:right">% berhasil<br>tanpa</th><th style="text-align:right">Selisih<br>poin</th>
+        <th style="text-align:right">r</th><th style="text-align:right">Bobot<br>skor</th><th>Terjemahan di aplikasi</th>
+      </tr></thead>
+      <tbody>
+        {% for b in baris %}
+        <tr>
+          <td><b>{{ b.indikator }}</b></td>
+          <td class="ket" style="max-width:120px">{{ b.ambang }}</td>
+          <td class="n masuk">{{ '%.1f'|format(b.nilai_berhasil) if b.nilai_berhasil is not none else '—' }}</td>
+          <td class="n keluar">{{ '%.1f'|format(b.nilai_tidak_berhasil) if b.nilai_tidak_berhasil is not none else '—' }}</td>
+          <td class="n">{{ '+%.1f'|format(b.selisih) if b.selisih is not none else '—' }}</td>
+          <td class="n">{{ '%.3f'|format(b.korelasi) if b.korelasi is not none else '—' }}</td>
+          <td class="n"><span class="kapsul k-netral">{{ b.bobot }}</span></td>
+          <td class="ket">{{ b.keterangan }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="grid grid--lebar">
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>Sebaran skor pengguna terdaftar</h2><span class="kartu__note">jumlah UMKM per 5 poin skor</span></div>
+    {% if distribusi %}
+    <table class="buku">
+      <tbody>
+        {% for d in distribusi %}
+        <tr>
+          <td class="n" style="width:44px">{{ d.label }}</td>
+          <td><span class="meter"><i style="width:{{ d.lebar }}%"></i></span></td>
+          <td class="n" style="width:60px">{{ d.anda|int }} UMKM</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="kosong"><b>Belum ada skor tersimpan</b>Sebaran muncul setelah pengguna merekam perubahan di modul mana pun.</div>
+    {% endif %}
+  </div>
+
+  <div class="kartu">
+    <div class="kartu__kepala"><h2>Logika di balik dashboard</h2></div>
+    <pre class="num" style="margin:0;font-size:11.5px;line-height:1.7;white-space:pre-wrap;color:var(--tinta-2)">skor = 25·catatan_keuangan
+     + 20·rencana_bisnis
+     + 15·(pemasaran-1)/6
+     + 10·internet
+     + 10·normalisasi(modal)
+     + 10·min(pengalaman,20)/20
+     +  5·kemitraan
+     +  5·(saran-1)/6
+
+status = "Berhasil" jika skor >= 50</pre>
+    <div class="kartu__kaki">
+      Tidak ada probabilitas tersembunyi: setiap poin bisa ditelusuri ke indikatornya di halaman
+      <a href="/profil">Profil &amp; Bobot</a>, dan versi mesinnya tersedia di <a href="/api/skor">/api/skor</a>.
+    </div>
+  </div>
+</section>
+
+<section class="kartu" style="border-left:5px solid var(--langit)">
+  <div class="kartu__kepala" style="border:0;padding:0;margin:0 0 6px"><h2>Cara angka-angka ini dipakai</h2></div>
+  <p class="teks-kecil" style="margin:0;max-width:80ch">
+    Saat sebuah indikator bernilai 0, sistem menampilkan rekomendasi prioritas sesuai selisih di tabel atas
+    (misalnya <b>+56,8 poin</b> untuk pencatatan keuangan). Saat indikator sudah terpenuhi, rekomendasi hilang dan
+    skor total naik sesuai bobot. Begitulah siklus perbaikan yang ingin didorong: angka dari dataset diterjemahkan
+    jadi tindakan, bukan sekadar grafik.
+  </p>
+</section>
+{% endblock %}
